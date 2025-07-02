@@ -44,7 +44,7 @@
         ></video>
         <video
           id="video2"
-          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8"
+          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2FIMG_2642.MOV?alt=media&token=32a8e3c4-1c2c-4b2c-a178-352ae0d07ccb"
           autoplay
           loop
           muted
@@ -78,37 +78,34 @@
     </a-scene>
 
 <script>
-  const video1 = document.querySelector("#video1");
-  const video2 = document.querySelector("#video2");
+  const video1 = document.getElementById("video1");
+  const video2 = document.getElementById("video2");
   const unmuteButton = document.getElementById("unmute-button");
 
   let userInteracted = false;
 
-  // iOS-compatible: Only unmute + play when directly tapped
   unmuteButton.addEventListener("click", () => {
     userInteracted = true;
-    
-    // Unmute and force play
-    video1.muted = false;
-    video2.muted = false;
 
-    video1.currentTime = 0;
-    video2.currentTime = 0;
-
-    video1.play().catch((e) => console.warn("Video1 play error", e));
-    video2.play().catch((e) => console.warn("Video2 play error", e));
+    // Fully unmute and prepare both videos
+    [video1, video2].forEach(video => {
+      video.pause(); // stop if playing muted
+      video.currentTime = 0;
+      video.removeAttribute("muted");
+      video.muted = false;
+      video.volume = 1;
+      video.load(); // required for Safari
+    });
 
     unmuteButton.style.display = "none";
   });
 
-  const target0 = document.querySelector("#target-0");
-  const target1 = document.querySelector("#target-1");
+  const target0 = document.getElementById("target-0");
+  const target1 = document.getElementById("target-1");
 
   target0.addEventListener("targetFound", () => {
     if (userInteracted) {
-      video1.load(); // Refresh context
-      video1.muted = false;
-      video1.play().catch((e) => console.warn("Video1 play error", e));
+      video1.play().catch(e => console.warn("Video1 play error:", e));
     }
   });
 
@@ -119,9 +116,7 @@
 
   target1.addEventListener("targetFound", () => {
     if (userInteracted) {
-      video2.load();
-      video2.muted = false;
-      video2.play().catch((e) => console.warn("Video2 play error", e));
+      video2.play().catch(e => console.warn("Video2 play error:", e));
     }
   });
 
