@@ -82,29 +82,30 @@
   const video2 = document.getElementById("video2");
   const unmuteButton = document.getElementById("unmute-button");
 
-  let userHasTapped = false;
+  let userInteracted = false;
 
   unmuteButton.addEventListener("click", () => {
-    userHasTapped = true;
+    userInteracted = true;
+
+    // Fully unmute and prepare both videos
+    [video1, video2].forEach(video => {
+      video.pause(); // stop if playing muted
+      video.currentTime = 0;
+      video.removeAttribute("muted");
+      video.muted = false;
+      video.volume = 1;
+      video.load(); // required for Safari
+    });
+
     unmuteButton.style.display = "none";
   });
-
-  const prepareAndPlay = (video) => {
-    video.pause();
-    video.currentTime = 0;
-    video.removeAttribute("muted");
-    video.muted = false;
-    video.volume = 1;
-    video.load(); // Safari needs this
-    video.play().catch(e => console.warn("Playback error:", e));
-  };
 
   const target0 = document.getElementById("target-0");
   const target1 = document.getElementById("target-1");
 
   target0.addEventListener("targetFound", () => {
-    if (userHasTapped) {
-      prepareAndPlay(video1);
+    if (userInteracted) {
+      video1.play().catch(e => console.warn("Video1 play error:", e));
     }
   });
 
@@ -114,8 +115,8 @@
   });
 
   target1.addEventListener("targetFound", () => {
-    if (userHasTapped) {
-      prepareAndPlay(video2);
+    if (userInteracted) {
+      video2.play().catch(e => console.warn("Video2 play error:", e));
     }
   });
 
@@ -124,6 +125,5 @@
     video2.currentTime = 0;
   });
 </script>
-
   </body>
 </html>
