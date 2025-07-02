@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    <style>
+      body { margin: 0; overflow: hidden; }
+      #unmute-button {
+        position: absolute;
+        top: 20px;
+        left: 20px;
+        z-index: 10;
+        padding: 10px 16px;
+        font-size: 16px;
+        background-color: #ffffffdd;
+        border: none;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+    </style>
+  </head>
+
+  <body>
+    <button id="unmute-button">🔊 Tap to Unmute</button>
+
+    <a-scene
+      mindar-image="imageTargetSrc: ./targets.mind;"
+      color-space="sRGB"
+      renderer="colorManagement: true, physicallyCorrectLights"
+      vr-mode-ui="enabled: false"
+      device-orientation-permission-ui="enabled: false"
+    >
+      <a-assets>
+        <video id="video1" src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8" loop muted preload="auto" playsinline crossorigin="anonymous"></video>
+        <video id="video2" src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8" loop muted preload="auto" playsinline crossorigin="anonymous"></video>
+      </a-assets>
+
+      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+      <!-- Marker 0 → video1 -->
+      <a-entity mindar-image-target="targetIndex: 0" id="target-0">
+        <a-plane
+          width="1"
+          height="0.5625"
+          position="0 0 0"
+          rotation="0 0 0"
+          material="shader: flat; src: #video1"
+        ></a-plane>
+      </a-entity>
+
+      <!-- Marker 1 → video2 -->
+      <a-entity mindar-image-target="targetIndex: 1" id="target-1">
+        <a-plane
+          width="0.5625"
+          height="1"
+          position="0 0 0"
+          rotation="0 0 0"
+          material="shader: flat; src: #video2"
+        ></a-plane>
+      </a-entity>
+    </a-scene>
+
+    <script>
+      const video1 = document.querySelector("#video1");
+      const video2 = document.querySelector("#video2");
+      const unmuteButton = document.getElementById("unmute-button");
+    
+      let allowUnmute = false; // Only unmute when user has tapped the button
+    
+      // User interaction to allow unmuting later
+      unmuteButton.addEventListener("click", () => {
+        allowUnmute = true;
+        unmuteButton.style.display = "none";
+      });
+    
+      // Target 0 detection events
+      const target0 = document.querySelector("#target-0");
+      target0.addEventListener("targetFound", () => {
+        if (allowUnmute) {
+          video1.muted = false;
+          video1.volume = 1;
+        }
+        video1.play();
+      });
+      target0.addEventListener("targetLost", () => {
+        video1.pause();
+        video1.currentTime = 0; // Optional: reset video position
+      });
+    
+      // Target 1 detection events
+      const target1 = document.querySelector("#target-1");
+      target1.addEventListener("targetFound", () => {
+        if (allowUnmute) {
+          video2.muted = false;
+          video2.volume = 1;
+        }
+        video2.play();
+      });
+      target1.addEventListener("targetLost", () => {
+        video2.pause();
+        video2.currentTime = 0;
+      });
+    </script>
+  </body>
+</html>
