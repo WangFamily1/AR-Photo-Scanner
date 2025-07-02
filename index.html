@@ -77,45 +77,58 @@
       </a-entity>
     </a-scene>
 
-    <script>
-      const video1 = document.querySelector("#video1");
-      const video2 = document.querySelector("#video2");
-      const unmuteButton = document.getElementById("unmute-button");
+<script>
+  const video1 = document.querySelector("#video1");
+  const video2 = document.querySelector("#video2");
+  const unmuteButton = document.getElementById("unmute-button");
 
-      let userInteracted = false;
+  let userInteracted = false;
 
-      // Safari requires a user interaction before playback
-      unmuteButton.addEventListener("click", () => {
-        userInteracted = true;
-        video1.play().catch(() => {});
-        video2.play().catch(() => {});
-        unmuteButton.style.display = "none";
-      });
+  // iOS-compatible: Only unmute + play when directly tapped
+  unmuteButton.addEventListener("click", () => {
+    userInteracted = true;
+    
+    // Unmute and force play
+    video1.muted = false;
+    video2.muted = false;
 
-      const target0 = document.querySelector("#target-0");
-      const target1 = document.querySelector("#target-1");
+    video1.currentTime = 0;
+    video2.currentTime = 0;
 
-      target0.addEventListener("targetFound", () => {
-        if (userInteracted) {
-          video1.load(); // refresh autoplay context
-          video1.play().catch((e) => console.warn("Video1 play error", e));
-        }
-      });
-      target0.addEventListener("targetLost", () => {
-        video1.pause();
-        video1.currentTime = 0;
-      });
+    video1.play().catch((e) => console.warn("Video1 play error", e));
+    video2.play().catch((e) => console.warn("Video2 play error", e));
 
-      target1.addEventListener("targetFound", () => {
-        if (userInteracted) {
-          video2.load();
-          video2.play().catch((e) => console.warn("Video2 play error", e));
-        }
-      });
-      target1.addEventListener("targetLost", () => {
-        video2.pause();
-        video2.currentTime = 0;
-      });
-    </script>
+    unmuteButton.style.display = "none";
+  });
+
+  const target0 = document.querySelector("#target-0");
+  const target1 = document.querySelector("#target-1");
+
+  target0.addEventListener("targetFound", () => {
+    if (userInteracted) {
+      video1.load(); // Refresh context
+      video1.muted = false;
+      video1.play().catch((e) => console.warn("Video1 play error", e));
+    }
+  });
+
+  target0.addEventListener("targetLost", () => {
+    video1.pause();
+    video1.currentTime = 0;
+  });
+
+  target1.addEventListener("targetFound", () => {
+    if (userInteracted) {
+      video2.load();
+      video2.muted = false;
+      video2.play().catch((e) => console.warn("Video2 play error", e));
+    }
+  });
+
+  target1.addEventListener("targetLost", () => {
+    video2.pause();
+    video2.currentTime = 0;
+  });
+</script>
   </body>
 </html>
