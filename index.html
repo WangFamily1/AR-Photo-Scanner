@@ -22,7 +22,7 @@
   </head>
 
   <body>
-    <button id="unmute-button">🔊 Tap to Unmute</button>
+    <button id="unmute-button">▶️ Tap to Start</button>
 
     <a-scene
       mindar-image="imageTargetSrc: ./targets.mind;"
@@ -32,13 +32,30 @@
       device-orientation-permission-ui="enabled: false"
     >
       <a-assets>
-        <video id="video1" src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8" loop muted preload="auto" playsinline crossorigin="anonymous"></video>
-        <video id="video2" src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8" loop muted preload="auto" playsinline crossorigin="anonymous"></video>
+        <video
+          id="video1"
+          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="auto"
+          crossorigin="anonymous"
+        ></video>
+        <video
+          id="video2"
+          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F0630.mp4?alt=media&token=893077a6-859d-4724-961d-ec0120a393d8"
+          autoplay
+          loop
+          muted
+          playsinline
+          preload="auto"
+          crossorigin="anonymous"
+        ></video>
       </a-assets>
 
       <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <!-- Marker 0 → video1 -->
       <a-entity mindar-image-target="targetIndex: 0" id="target-0">
         <a-plane
           width="1"
@@ -49,7 +66,6 @@
         ></a-plane>
       </a-entity>
 
-      <!-- Marker 1 → video2 -->
       <a-entity mindar-image-target="targetIndex: 1" id="target-1">
         <a-plane
           width="0.5625"
@@ -65,37 +81,36 @@
       const video1 = document.querySelector("#video1");
       const video2 = document.querySelector("#video2");
       const unmuteButton = document.getElementById("unmute-button");
-    
-      let allowUnmute = false; // Only unmute when user has tapped the button
-    
-      // User interaction to allow unmuting later
+
+      let userInteracted = false;
+
+      // Safari requires a user interaction before playback
       unmuteButton.addEventListener("click", () => {
-        allowUnmute = true;
+        userInteracted = true;
+        video1.play().catch(() => {});
+        video2.play().catch(() => {});
         unmuteButton.style.display = "none";
       });
-    
-      // Target 0 detection events
+
       const target0 = document.querySelector("#target-0");
+      const target1 = document.querySelector("#target-1");
+
       target0.addEventListener("targetFound", () => {
-        if (allowUnmute) {
-          video1.muted = false;
-          video1.volume = 1;
+        if (userInteracted) {
+          video1.load(); // refresh autoplay context
+          video1.play().catch((e) => console.warn("Video1 play error", e));
         }
-        video1.play();
       });
       target0.addEventListener("targetLost", () => {
         video1.pause();
-        video1.currentTime = 0; // Optional: reset video position
+        video1.currentTime = 0;
       });
-    
-      // Target 1 detection events
-      const target1 = document.querySelector("#target-1");
+
       target1.addEventListener("targetFound", () => {
-        if (allowUnmute) {
-          video2.muted = false;
-          video2.volume = 1;
+        if (userInteracted) {
+          video2.load();
+          video2.play().catch((e) => console.warn("Video2 play error", e));
         }
-        video2.play();
       });
       target1.addEventListener("targetLost", () => {
         video2.pause();
