@@ -1,129 +1,142 @@
 <!DOCTYPE html>
 <html>
-  <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
-    <style>
-      body { margin: 0; overflow: hidden; }
-      #unmute-button {
-        position: absolute;
-        top: 20px;
-        left: 20px;
-        z-index: 10;
-        padding: 10px 16px;
-        font-size: 16px;
-        background-color: #ffffffdd;
-        border: none;
-        border-radius: 8px;
-        cursor: pointer;
-      }
-    </style>
-  </head>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+  <style>
+    body { margin: 0; overflow: hidden; }
+    #unmute-button {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      z-index: 10;
+      padding: 10px 16px;
+      font-size: 16px;
+      background-color: #ffffffdd;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+  </style>
+</head>
 
-  <body>
-    <button id="unmute-button">▶️ Tap to Start</button>
+<body>
+  <button id="unmute-button">▶️ Tap to Start</button>
 
-    <a-scene
-      mindar-image="imageTargetSrc: ./targets.mind;"
-      color-space="sRGB"
-      renderer="colorManagement: true, physicallyCorrectLights"
-      vr-mode-ui="enabled: false"
-      device-orientation-permission-ui="enabled: false"
-    >
-      <a-assets>
-        <video
-          id="video1"
-          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E4%B8%8A%E6%B5%B7%E7%AF%87.mp4?alt=media&token=aa6734f0-b54f-44ea-9aaf-9e6e671e07b5"
-          autoplay
-          loop
-          muted
-          playsinline
-          preload="auto"
-          crossorigin="anonymous"
-        ></video>
-        <video
-          id="video2"
-          src="https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E5%93%88%E5%B0%94%E6%BB%A8%E4%B8%AD%E5%A4%AE%E5%A4%A7%E8%A1%97%E7%AF%87.mp4?alt=media&token=85a2ab85-6f6a-4b3c-beb9-4bfa07c5e0fa"
-          autoplay
-          loop
-          muted
-          playsinline
-          preload="auto"
-          crossorigin="anonymous"
-        ></video>
-      </a-assets>
+  <a-scene
+    mindar-image="imageTargetSrc: ./targets.mind;"
+    color-space="sRGB"
+    renderer="colorManagement: true, physicallyCorrectLights"
+    vr-mode-ui="enabled: false"
+    device-orientation-permission-ui="enabled: false"
+  >
+    <a-assets id="asset-container"></a-assets>
+    <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
 
-      <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+    <script>
+      const videoConfigs = [
+        {
+          id: "video1",
+          url: "https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E4%B8%8A%E6%B5%B7%E7%AF%87.mp4?alt=media&token=aa6734f0-b54f-44ea-9aaf-9e6e671e07b5",
+          width: 1,
+          height: 0.75
+        },
+        {
+          id: "video2",
+          url: "https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E5%93%88%E5%B0%94%E6%BB%A8%E4%B8%AD%E5%A4%AE%E5%A4%A7%E8%A1%97%E7%AF%87.mp4?alt=media&token=85a2ab85-6f6a-4b3c-beb9-4bfa07c5e0fa",
+          width: 1,
+          height: 1.33
+        },
+        {
+          id: "video3",
+          url: "https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E5%9B%BD%E9%98%B2%E6%95%99%E8%82%B2%E7%AF%87.mp4?alt=media&token=593a892c-b116-4a18-be58-f99fb439cdeb",
+          width: 1,
+          height: 0.75
+        },
+        // Add videos 3 to 20 below
+        // {
+        //   id: "video3",
+        //   url: "...",
+        //   width: ...,
+        //   height: ...
+        // },
+        // ...
+      ];
 
-      <a-entity mindar-image-target="targetIndex: 0" id="target-0">
-        <a-plane
-          width="1"
-          height="0.7500"
-          position="0 0 0"
-          rotation="0 0 0"
-          material="shader: flat; src: #video1"
-        ></a-plane>
-      </a-entity>
+      const assetContainer = document.getElementById("asset-container");
+      const scene = document.querySelector("a-scene");
 
-      <a-entity mindar-image-target="targetIndex: 1" id="target-1">
-        <a-plane
-          width="1"
-          height="1.3333"
-          position="0 0 0"
-          rotation="0 0 0"
-          material="shader: flat; src: #video2"
-        ></a-plane>
-      </a-entity>
-    </a-scene>
+      videoConfigs.forEach((config, index) => {
+        // Create <video> tag
+        const video = document.createElement("video");
+        video.setAttribute("id", config.id);
+        video.setAttribute("src", config.url);
+        video.setAttribute("autoplay", "");
+        video.setAttribute("loop", "");
+        video.setAttribute("muted", "");
+        video.setAttribute("playsinline", "");
+        video.setAttribute("preload", "auto");
+        video.setAttribute("crossorigin", "anonymous");
+        assetContainer.appendChild(video);
 
-<script>
-  const video1 = document.getElementById("video1");
-  const video2 = document.getElementById("video2");
-  const unmuteButton = document.getElementById("unmute-button");
+        // Create <a-entity> and <a-plane>
+        const entity = document.createElement("a-entity");
+        entity.setAttribute("mindar-image-target", `targetIndex: ${index}`);
+        entity.setAttribute("id", `target-${index}`);
 
-  let userInteracted = false;
+        const plane = document.createElement("a-plane");
+        plane.setAttribute("width", config.width);
+        plane.setAttribute("height", config.height);
+        plane.setAttribute("position", "0 0 0");
+        plane.setAttribute("rotation", "0 0 0");
+        plane.setAttribute("material", `shader: flat; src: #${config.id}`);
 
-  unmuteButton.addEventListener("click", () => {
-    userInteracted = true;
+        entity.appendChild(plane);
+        scene.appendChild(entity);
+      });
+    </script>
+  </a-scene>
 
-    // Fully unmute and prepare both videos
-    [video1, video2].forEach(video => {
-      video.pause(); // stop if playing muted
-      video.currentTime = 0;
-      video.removeAttribute("muted");
-      video.muted = false;
-      video.volume = 1;
-      video.load(); // required for Safari
+  <script>
+    const unmuteButton = document.getElementById("unmute-button");
+    let userInteracted = false;
+
+    unmuteButton.addEventListener("click", () => {
+      userInteracted = true;
+
+      const videos = document.querySelectorAll("video");
+      videos.forEach(video => {
+        video.pause();
+        video.currentTime = 0;
+        video.removeAttribute("muted");
+        video.muted = false;
+        video.volume = 1;
+        video.load();
+      });
+
+      unmuteButton.style.display = "none";
     });
 
-    unmuteButton.style.display = "none";
-  });
+    document.addEventListener("DOMContentLoaded", () => {
+      videoConfigs.forEach((config, index) => {
+        const target = document.getElementById(`target-${index}`);
+        const video = document.getElementById(config.id);
 
-  const target0 = document.getElementById("target-0");
-  const target1 = document.getElementById("target-1");
+        if (target && video) {
+          target.addEventListener("targetFound", () => {
+            if (userInteracted) {
+              video.play().catch(e => console.warn(`Play error [${config.id}]:`, e));
+            }
+          });
 
-  target0.addEventListener("targetFound", () => {
-    if (userInteracted) {
-      video1.play().catch(e => console.warn("Video1 play error:", e));
-    }
-  });
-
-  target0.addEventListener("targetLost", () => {
-    video1.pause();
-    video1.currentTime = 0;
-  });
-
-  target1.addEventListener("targetFound", () => {
-    if (userInteracted) {
-      video2.play().catch(e => console.warn("Video2 play error:", e));
-    }
-  });
-
-  target1.addEventListener("targetLost", () => {
-    video2.pause();
-    video2.currentTime = 0;
-  });
-</script>
-  </body>
+          target.addEventListener("targetLost", () => {
+            video.pause();
+            video.currentTime = 0;
+          });
+        }
+      });
+    });
+  </script>
+</body>
 </html>
