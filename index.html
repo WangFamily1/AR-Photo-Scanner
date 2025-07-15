@@ -184,6 +184,7 @@
       let userInteracted = false;
       let currentlyPlayingVideo = null;
       let audioEnabled = false;
+      let videosPreloaded = false;
 
       // Update loading progress
       function updateLoadingProgress() {
@@ -195,8 +196,32 @@
           setTimeout(() => {
             loadingScreen.classList.add("hidden");
             userInteracted = true; // Auto-enable video playback
+            
+            // Preload all videos for instant playback
+            preloadAllVideos();
           }, 500);
         }
+      }
+
+      // Preload all videos for instant playback
+      function preloadAllVideos() {
+        if (videosPreloaded) return;
+        
+        console.log("Preloading all videos for instant playback...");
+        const allVideos = document.querySelectorAll("video");
+        
+        allVideos.forEach(video => {
+          // Set preload to auto and load the video
+          video.preload = "auto";
+          video.load();
+          
+          // Add event listener to track when video is ready
+          video.addEventListener("canplaythrough", () => {
+            console.log(`Video preloaded: ${video.id}`);
+          }, { once: true });
+        });
+        
+        videosPreloaded = true;
       }
 
       // Safe video play function
@@ -220,7 +245,7 @@
             audioButton.style.display = "block";
           }
           
-          // Ensure video is loaded before playing
+          // Video should already be preloaded, but check anyway
           if (video.readyState < 2) {
             video.load();
           }
@@ -324,16 +349,8 @@
             target.addEventListener("targetFound", () => {
               console.log(`Target found: ${config.id}`);
               
-              // Ensure video is ready before playing
-              if (video.readyState >= 2) {
-                safePlayVideo(video);
-              } else {
-                // Wait for video to be ready
-                video.addEventListener("canplay", () => {
-                  safePlayVideo(video);
-                }, { once: true });
-                video.load();
-              }
+              // Videos should be preloaded, so play immediately
+              safePlayVideo(video);
             });
 
             target.addEventListener("targetLost", () => {
