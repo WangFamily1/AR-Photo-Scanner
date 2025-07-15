@@ -220,6 +220,11 @@
             audioButton.style.display = "block";
           }
           
+          // Ensure video is loaded before playing
+          if (video.readyState < 2) {
+            video.load();
+          }
+          
           const playPromise = video.play();
           if (playPromise !== undefined) {
             playPromise
@@ -263,7 +268,7 @@
         video.setAttribute("loop", "");
         video.setAttribute("muted", "");
         video.setAttribute("playsinline", "");
-        video.setAttribute("preload", "metadata");
+        video.setAttribute("preload", "auto"); // Changed back to auto for better loading
         video.setAttribute("crossorigin", "anonymous");
         
         // Add loading event listeners
@@ -301,12 +306,13 @@
         audioEnabled = true;
         audioButton.style.display = "none";
         
-        // Unmute currently playing video
-        if (currentlyPlayingVideo) {
-          currentlyPlayingVideo.muted = false;
-        }
+        // Unmute all videos
+        const allVideos = document.querySelectorAll("video");
+        allVideos.forEach(video => {
+          video.muted = false;
+        });
         
-        console.log("Audio enabled");
+        console.log("Audio enabled for all videos");
       });
 
       document.addEventListener("DOMContentLoaded", () => {
@@ -317,7 +323,17 @@
           if (target && video) {
             target.addEventListener("targetFound", () => {
               console.log(`Target found: ${config.id}`);
-              safePlayVideo(video);
+              
+              // Ensure video is ready before playing
+              if (video.readyState >= 2) {
+                safePlayVideo(video);
+              } else {
+                // Wait for video to be ready
+                video.addEventListener("canplay", () => {
+                  safePlayVideo(video);
+                }, { once: true });
+                video.load();
+              }
             });
 
             target.addEventListener("targetLost", () => {
