@@ -18,11 +18,51 @@
       border-radius: 8px;
       cursor: pointer;
     }
+    #loading-screen {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.8);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+      color: white;
+      font-family: Arial, sans-serif;
+    }
+    #loading-progress {
+      width: 300px;
+      height: 20px;
+      background: #333;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 20px 0;
+    }
+    #loading-bar {
+      height: 100%;
+      background: #4CAF50;
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .hidden {
+      display: none !important;
+    }
   </style>
 </head>
 
 <body>
-  <button id="unmute-button">▶️ Tap to Start</button>
+  <div id="loading-screen">
+    <h2>Loading AR Experience...</h2>
+    <div id="loading-progress">
+      <div id="loading-bar"></div>
+    </div>
+    <p id="loading-text">Initializing...</p>
+  </div>
+
+  <button id="unmute-button" class="hidden">▶️ Tap to Start</button>
 
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind;"
@@ -125,28 +165,36 @@
           url: "https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E6%B2%88%E9%98%B3%E7%AF%87.mp4?alt=media&token=26237d59-68de-4228-aceb-596f84f6db34",
           width: 1,
           height: 1.33
-        },
-         {
-          id: "video16",
-          url: "https://firebasestorage.googleapis.com/v0/b/ar-photo-scanner.firebasestorage.app/o/uploads%2Fvideos%2F%E6%B2%88%E9%98%B3%E7%AF%87.mp4?alt=media&token=26237d59-68de-4228-aceb-596f84f6db34",
-          width: 1,
-          height: 1.33
-        },
-        // Add videos 3 to 20 below
-        // {
-        //   id: "video3",
-        //   url: "...",
-        //   width: ...,
-        //   height: ...
-        // },
-        // ...
+        }
       ];
 
       const assetContainer = document.getElementById("asset-container");
       const scene = document.querySelector("a-scene");
+      const loadingScreen = document.getElementById("loading-screen");
+      const loadingBar = document.getElementById("loading-bar");
+      const loadingText = document.getElementById("loading-text");
+      const unmuteButton = document.getElementById("unmute-button");
 
+      let loadedVideos = 0;
+      let totalVideos = videoConfigs.length;
+
+      // Update loading progress
+      function updateLoadingProgress() {
+        const progress = (loadedVideos / totalVideos) * 100;
+        loadingBar.style.width = progress + "%";
+        loadingText.textContent = `Loading videos... ${loadedVideos}/${totalVideos}`;
+        
+        if (loadedVideos === totalVideos) {
+          setTimeout(() => {
+            loadingScreen.classList.add("hidden");
+            unmuteButton.classList.remove("hidden");
+          }, 500);
+        }
+      }
+
+      // Create video elements with lazy loading
       videoConfigs.forEach((config, index) => {
-        // Create <video> tag
+        // Create <video> tag with lazy loading
         const video = document.createElement("video");
         video.setAttribute("id", config.id);
         video.setAttribute("src", config.url);
@@ -154,8 +202,21 @@
         video.setAttribute("loop", "");
         video.setAttribute("muted", "");
         video.setAttribute("playsinline", "");
-        video.setAttribute("preload", "auto");
+        video.setAttribute("preload", "metadata"); // Changed from "auto" to "metadata"
         video.setAttribute("crossorigin", "anonymous");
+        
+        // Add loading event listeners
+        video.addEventListener("loadedmetadata", () => {
+          loadedVideos++;
+          updateLoadingProgress();
+        });
+        
+        video.addEventListener("error", () => {
+          console.warn(`Failed to load video: ${config.id}`);
+          loadedVideos++;
+          updateLoadingProgress();
+        });
+        
         assetContainer.appendChild(video);
 
         // Create <a-entity> and <a-plane>
@@ -173,48 +234,45 @@
         entity.appendChild(plane);
         scene.appendChild(entity);
       });
+
+      let userInteracted = false;
+
+      unmuteButton.addEventListener("click", () => {
+        userInteracted = true;
+
+        const videos = document.querySelectorAll("video");
+        videos.forEach(video => {
+          video.pause();
+          video.currentTime = 0;
+          video.removeAttribute("muted");
+          video.muted = false;
+          video.volume = 1;
+          video.load();
+        });
+
+        unmuteButton.style.display = "none";
+      });
+
+      document.addEventListener("DOMContentLoaded", () => {
+        videoConfigs.forEach((config, index) => {
+          const target = document.getElementById(`target-${index}`);
+          const video = document.getElementById(config.id);
+
+          if (target && video) {
+            target.addEventListener("targetFound", () => {
+              if (userInteracted) {
+                video.play().catch(e => console.warn(`Play error [${config.id}]:`, e));
+              }
+            });
+
+            target.addEventListener("targetLost", () => {
+              video.pause();
+              video.currentTime = 0;
+            });
+          }
+        });
+      });
     </script>
   </a-scene>
-
-  <script>
-    const unmuteButton = document.getElementById("unmute-button");
-    let userInteracted = false;
-
-    unmuteButton.addEventListener("click", () => {
-      userInteracted = true;
-
-      const videos = document.querySelectorAll("video");
-      videos.forEach(video => {
-        video.pause();
-        video.currentTime = 0;
-        video.removeAttribute("muted");
-        video.muted = false;
-        video.volume = 1;
-        video.load();
-      });
-
-      unmuteButton.style.display = "none";
-    });
-
-    document.addEventListener("DOMContentLoaded", () => {
-      videoConfigs.forEach((config, index) => {
-        const target = document.getElementById(`target-${index}`);
-        const video = document.getElementById(config.id);
-
-        if (target && video) {
-          target.addEventListener("targetFound", () => {
-            if (userInteracted) {
-              video.play().catch(e => console.warn(`Play error [${config.id}]:`, e));
-            }
-          });
-
-          target.addEventListener("targetLost", () => {
-            video.pause();
-            video.currentTime = 0;
-          });
-        }
-      });
-    });
-  </script>
 </body>
 </html>
