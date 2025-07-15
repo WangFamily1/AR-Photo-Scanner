@@ -6,18 +6,7 @@
   <script src="https://cdn.jsdelivr.net/npm/mind-ar@1.2.5/dist/mindar-image-aframe.prod.js"></script>
   <style>
     body { margin: 0; overflow: hidden; }
-    #unmute-button {
-      position: absolute;
-      top: 20px;
-      left: 20px;
-      z-index: 10;
-      padding: 10px 16px;
-      font-size: 16px;
-      background-color: #ffffffdd;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
+
     #loading-screen {
       position: fixed;
       top: 0;
@@ -62,7 +51,7 @@
     <p id="loading-text">Initializing...</p>
   </div>
 
-  <button id="unmute-button" class="hidden">▶️ Tap to Start</button>
+
 
   <a-scene
     mindar-image="imageTargetSrc: ./targets.mind;"
@@ -173,10 +162,11 @@
       const loadingScreen = document.getElementById("loading-screen");
       const loadingBar = document.getElementById("loading-bar");
       const loadingText = document.getElementById("loading-text");
-      const unmuteButton = document.getElementById("unmute-button");
 
       let loadedVideos = 0;
       let totalVideos = videoConfigs.length;
+      let userInteracted = false;
+      let currentlyPlayingVideo = null;
 
       // Update loading progress
       function updateLoadingProgress() {
@@ -187,8 +177,58 @@
         if (loadedVideos === totalVideos) {
           setTimeout(() => {
             loadingScreen.classList.add("hidden");
-            unmuteButton.classList.remove("hidden");
+            userInteracted = true; // Auto-enable video playback
           }, 500);
+        }
+      }
+
+      // Safe video play function
+      function safePlayVideo(video) {
+        if (!userInteracted || !video) return;
+        
+        try {
+          // Stop any currently playing video
+          if (currentlyPlayingVideo && currentlyPlayingVideo !== video) {
+            currentlyPlayingVideo.pause();
+            currentlyPlayingVideo.currentTime = 0;
+          }
+          
+          // Reset and play the new video
+          video.currentTime = 0;
+          video.muted = false;
+          video.volume = 1;
+          
+          const playPromise = video.play();
+          if (playPromise !== undefined) {
+            playPromise
+              .then(() => {
+                currentlyPlayingVideo = video;
+                console.log(`Successfully playing: ${video.id}`);
+              })
+              .catch(error => {
+                console.warn(`Play failed for ${video.id}:`, error);
+                // Try muted play as fallback
+                video.muted = true;
+                video.play().catch(e => console.warn(`Muted play also failed:`, e));
+              });
+          }
+        } catch (error) {
+          console.error(`Error playing video ${video.id}:`, error);
+        }
+      }
+
+      // Safe video stop function
+      function safeStopVideo(video) {
+        if (!video) return;
+        
+        try {
+          video.pause();
+          video.currentTime = 0;
+          if (currentlyPlayingVideo === video) {
+            currentlyPlayingVideo = null;
+          }
+        } catch (error) {
+          console.error(`Error stopping video ${video.id}:`, error);
         }
       }
 
@@ -201,7 +241,7 @@
         video.setAttribute("loop", "");
         video.setAttribute("muted", "");
         video.setAttribute("playsinline", "");
-        video.setAttribute("preload", "metadata"); // Changed from "auto" to "metadata"
+        video.setAttribute("preload", "metadata");
         video.setAttribute("crossorigin", "anonymous");
         
         // Add loading event listeners
@@ -234,23 +274,7 @@
         scene.appendChild(entity);
       });
 
-      let userInteracted = false;
 
-      unmuteButton.addEventListener("click", () => {
-        userInteracted = true;
-
-        const videos = document.querySelectorAll("video");
-        videos.forEach(video => {
-          video.pause();
-          video.currentTime = 0;
-          video.removeAttribute("muted");
-          video.muted = false;
-          video.volume = 1;
-          // Remove video.load() to prevent autoplay
-        });
-
-        unmuteButton.style.display = "none";
-      });
 
       document.addEventListener("DOMContentLoaded", () => {
         videoConfigs.forEach((config, index) => {
@@ -259,30 +283,13 @@
 
           if (target && video) {
             target.addEventListener("targetFound", () => {
-              if (userInteracted) {
-                // Pause all other videos first
-                const allVideos = document.querySelectorAll("video");
-                allVideos.forEach(v => {
-                  if (v !== video) {
-                    v.pause();
-                    v.currentTime = 0;
-                  }
-                });
-                
-                // Play the current video with better error handling
-                video.currentTime = 0;
-                video.play().catch(e => {
-                  console.warn(`Play error [${config.id}]:`, e);
-                  // If autoplay fails, try muted play
-                  video.muted = true;
-                  video.play().catch(e2 => console.warn(`Muted play also failed [${config.id}]:`, e2));
-                });
-              }
+              console.log(`Target found: ${config.id}`);
+              safePlayVideo(video);
             });
 
             target.addEventListener("targetLost", () => {
-              video.pause();
-              video.currentTime = 0;
+              console.log(`Target lost: ${config.id}`);
+              safeStopVideo(video);
             });
           }
         });
