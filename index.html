@@ -198,7 +198,6 @@
         const video = document.createElement("video");
         video.setAttribute("id", config.id);
         video.setAttribute("src", config.url);
-        video.setAttribute("autoplay", "");
         video.setAttribute("loop", "");
         video.setAttribute("muted", "");
         video.setAttribute("playsinline", "");
@@ -261,7 +260,23 @@
           if (target && video) {
             target.addEventListener("targetFound", () => {
               if (userInteracted) {
-                video.play().catch(e => console.warn(`Play error [${config.id}]:`, e));
+                // Pause all other videos first
+                const allVideos = document.querySelectorAll("video");
+                allVideos.forEach(v => {
+                  if (v !== video) {
+                    v.pause();
+                    v.currentTime = 0;
+                  }
+                });
+                
+                // Play the current video with better error handling
+                video.currentTime = 0;
+                video.play().catch(e => {
+                  console.warn(`Play error [${config.id}]:`, e);
+                  // If autoplay fails, try muted play
+                  video.muted = true;
+                  video.play().catch(e2 => console.warn(`Muted play also failed [${config.id}]:`, e2));
+                });
               }
             });
 
