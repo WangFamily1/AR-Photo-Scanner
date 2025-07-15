@@ -39,6 +39,19 @@
     .hidden {
       display: none !important;
     }
+    #audio-button {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      z-index: 10;
+      padding: 10px 16px;
+      font-size: 16px;
+      background-color: #ffffffdd;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      display: none;
+    }
   </style>
 </head>
 
@@ -50,6 +63,8 @@
     </div>
     <p id="loading-text">Initializing...</p>
   </div>
+
+  <button id="audio-button">🔊 Enable Audio</button>
 
 
 
@@ -162,11 +177,13 @@
       const loadingScreen = document.getElementById("loading-screen");
       const loadingBar = document.getElementById("loading-bar");
       const loadingText = document.getElementById("loading-text");
+      const audioButton = document.getElementById("audio-button");
 
       let loadedVideos = 0;
       let totalVideos = videoConfigs.length;
       let userInteracted = false;
       let currentlyPlayingVideo = null;
+      let audioEnabled = false;
 
       // Update loading progress
       function updateLoadingProgress() {
@@ -195,8 +212,13 @@
           
           // Reset and play the new video
           video.currentTime = 0;
-          video.muted = false;
+          video.muted = !audioEnabled; // Mute based on audio state
           video.volume = 1;
+          
+          // Show audio button if this is the first video playing
+          if (!audioEnabled) {
+            audioButton.style.display = "block";
+          }
           
           const playPromise = video.play();
           if (playPromise !== undefined) {
@@ -274,7 +296,18 @@
         scene.appendChild(entity);
       });
 
-
+      // Audio enable button
+      audioButton.addEventListener("click", () => {
+        audioEnabled = true;
+        audioButton.style.display = "none";
+        
+        // Unmute currently playing video
+        if (currentlyPlayingVideo) {
+          currentlyPlayingVideo.muted = false;
+        }
+        
+        console.log("Audio enabled");
+      });
 
       document.addEventListener("DOMContentLoaded", () => {
         videoConfigs.forEach((config, index) => {
