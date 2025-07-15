@@ -247,7 +247,7 @@
           video.removeAttribute("muted");
           video.muted = false;
           video.volume = 1;
-          video.load();
+          // Remove video.load() to prevent autoplay
         });
 
         unmuteButton.style.display = "none";
